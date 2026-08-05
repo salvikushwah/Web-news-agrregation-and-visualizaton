@@ -1,0 +1,280 @@
+# Web News Aggregation & Visualization — Backend Documentation
+
+**Team role covered by this document:** Backend & Database
+**Stack:** Node.js, Express 5, MongoDB, Mongoose 9, JWT, Joi, node-cron, NewsAPI
+
+---
+
+## 1. Folder Structure
+
+```
+backend/
+├── config/           # db.js — MongoDB connection
+├── constants/        # newsCategoryMap.js, countryCoordinates.js (if geo-fencing added)
+├── controllers/       # Thin request/response handlers, one per resource
+├── docs/              # This file and related API references
+├── helpers/           # (reserved — currently unused)
+├── jobs/              # node-cron scheduled tasks
+├── middleware/         # asyncHandler, errorHandler, authMiddleware
+├── models/            # Mongoose schemas
+├── repositories/       # ONLY layer allowed to query MongoDB directly
+├── routes/            # Express routers, mapped to controllers
+├── seed/              # One-time idempotent data seed scripts
+├── services/          # Business logic, sits between controllers and repositories
+├── tests/             # Reserved for automated tests (currently empty — gap, see audit)
+├── utils/             # AppError, generateToken, slugify, dateHelpers, chartHelpers
+├── validators/         # Joi schemas + validation middleware
+├── app.js             # Express app, middleware pipeline, route mounting
+└── server.js          # Entry point — env config, DB connect, cron start, listen
+```
+
+**Architectural rule enforced throughout:** routes → controllers (thin) → services (business logic) → repositories (the only DB access layer) → models (schema).
+
+---
+
+## 2. Technologies Used
+
+| Technology | Role |
+|---|---|
+| Node.js + Express 5 | HTTP server & routing |
+| MongoDB + Mongoose 9 | Database + ODM |
+| JWT (jsonwebtoken) | Stateless authentication |
+| bcryptjs | Password hashing |
+| Joi | Request validation |
+| Axios | Outbound HTTP calls to NewsAPI |
+| node-cron | Scheduled background jobs |
+| Helmet, CORS, express-rate-limit | Security middleware |
+| dotenv | Environment configuration |
+
+---
+
+## 3. NPM Packages
+
+`express`, `mongoose`, `dotenv`, `bcryptjs`, `jsonwebtoken`, `axios`, `cors`, `helmet`, `express-rate-limit`, `node-cron`, `morgan`, `cookie-parser`, `joi`, `nodemon` (dev).
+
+Note: `express-mongo-sanitize` was installed initially but deliberately **removed** in Step 2 — it's incompatible with Express 5's read-only `req.query`. Input sanitization is instead handled via `mongoose.set('sanitizeFilter', true)` plus Joi validation on every route.
+
+---
+
+## 4. Environment Variables
+
+| Variable | Purpose |
+|---|---|
+| `PORT` | Server port |
+| `NODE_ENV` | `development` / `production` |
+| `MONGO_URI` | MongoDB connection string |
+| `JWT_SECRET` | JWT signing secret |
+| `JWT_EXPIRE` | Token lifetime (e.g. `7d`) |
+| `CLIENT_URL` | Allowed CORS origin |
+| `NEWS_API_KEY` | NewsAPI authentication |
+| `NEWS_COUNTRY` | Default country for ingestion |
+| `NEWS_RETENTION_DAYS` | Auto-delete threshold for old API-sourced articles |
+| `AUTO_APPROVE_API_ARTICLES` | Whether NewsAPI-ingested articles go live immediately |
+
+---
+
+## 5. Database Architecture
+
+8 collections: `users`, `categories`, `sources`, `articles`, `bookmarks`, `readinghistories`, `comments`, `searchhistories`.
+
+`Article` is the hub — it references `Category` and `Source` via ObjectId, and is itself referenced by `Bookmark`, `ReadingHistory`, and `Comment`. This is a deliberate normalized design (Step 6) chosen specifically so category/source renames don't require touching every article, and so aggregation-based dashboards (Step 10) can `$group` on small reference collections instead of scanning free-text strings.
+
+**Note:** the original spec listed a standalone `Analytics` collection. This was **not built** — dashboard/trending numbers are computed live via aggregation pipelines instead (Steps 10–11), trading a small amount of per-request compute for always-fresh numbers with no sync logic required.
+
+Full per-collection field/index/relationship breakdown: see the Database Review table delivered alongside this document (Task 4 of the audit).
+
+---
+
+## 6. Authentication Flow
+
+1. `POST /api/auth/register` — Joi validation → check email uniqueness → bcrypt-hash password (via Mongoose `pre('save')` hook) → issue JWT.
+2. `POST /api/auth/login` — look up user with password field explicitly selected (`select('+password')`, since it's `select: false` by default) → `bcrypt.compare` → issue JWT.
+3. JWT payload contains `{ id, role }` — embedding role avoids a DB lookup for role checks on every request, though we still re-fetch the full user in `protect` to catch deactivated accounts.
+4. Identical error message for "no such email" and "wrong password" (`Invalid email or password`) — deliberate, prevents email enumeration.
+
+---
+
+## 7. Authorization Flow
+
+Two-stage middleware, always used together for role-gated routes:
+
+- **`protect`** — verifies JWT signature + expiry, re-fetches the user from DB (catches deactivation that happened after token issuance), attaches `req.user`.
+- **`authorize(...roles)`** — a higher-order function; checks `req.user.role` against an allow-list. Runs *after* `protect` in the middleware chain, since it depends on `req.user` already being set.
+- **`attachUserIfPresent`** — a third, softer variant used on public-but-personalizable routes (e.g. search): tries to decode a token if present, but never blocks the request if there isn't one or it's invalid.
+
+---
+
+## 8. Models
+
+`User`, `Category`, `Source`, `Article`, `Bookmark`, `ReadingHistory`, `Comment`, `SearchHistory` — see Section 5 / Database Review table for fields.
+
+---
+
+## 9. Controllers
+
+One controller file per resource (`authController`, `categoryController`, `sourceController`, `articleController`, `newsIngestionController`, `dashboardController`, `trendingController`, `visualizationController`, `bookmarkController`, `readingHistoryController`, `commentController`). Every controller is intentionally thin: receive request → call one service function → shape the HTTP response. No validation, no business rules, no direct DB access ever lives here.
+
+---
+
+## 10. Services
+
+Business logic layer — duplicate checks, ownership checks, orchestration across multiple repositories (e.g. `articleService.searchArticles` combines category resolution, source resolution, and the actual search+count queries). Services are the only layer allowed to `throw new AppError(...)`.
+
+---
+
+## 11. Routes
+
+| Base path | File |
+|---|---|
+| `/api/auth` | authRoutes.js |
+| `/api/categories` | categoryRoutes.js |
+| `/api/sources` | sourceRoutes.js |
+| `/api/articles` | articleRoutes.js |
+| `/api/news` | newsRoutes.js |
+| `/api/dashboard` | dashboardRoutes.js |
+| `/api/trending` | trendingRoutes.js |
+| `/api/visualization` | visualizationRoutes.js |
+| `/api/bookmarks` | bookmarkRoutes.js |
+| `/api/reading-history` | readingHistoryRoutes.js |
+| `/api/comments` | commentRoutes.js |
+
+Routing rule learned in Step 9: static routes (e.g. `/search`) must be registered **before** dynamic `/:id` routes on the same HTTP method, or Express will incorrectly match the static path as an ID parameter.
+
+---
+
+## 12. Middleware
+
+- `asyncHandler` — wraps async controllers so thrown errors/rejected promises are forwarded to `errorHandler` automatically, eliminating repetitive try/catch.
+- `errorHandler` — centralized, 4-argument error middleware; translates Mongoose CastErrors, duplicate-key errors, ValidationErrors, and JWT errors into consistent HTTP status codes + messages.
+- `authMiddleware` — `protect`, `authorize`, `attachUserIfPresent` (see Section 7).
+
+---
+
+## 13. Utilities
+
+`AppError` (custom error class carrying a statusCode), `generateToken` (JWT signing), `slugify` (category slug generation), `dateHelpers` (startOfToday/daysAgo), `chartHelpers` (toChartFormat/fillDateGaps).
+
+---
+
+## 14. External APIs
+
+**NewsAPI** (`newsapi.org/v2/top-headlines`) — fetched per-category on a cron schedule. Category mapping note: NewsAPI has no "politics" category; our "Politics" category is mapped to NewsAPI's `general` category as the closest available match.
+
+---
+
+## 15. API Endpoints (Full List)
+
+| Method | Endpoint | Access |
+|---|---|---|
+| POST | /api/auth/register | Public |
+| POST | /api/auth/login | Public |
+| GET | /api/auth/me | Logged-in |
+| GET | /api/categories | Public |
+| POST/PUT/DELETE | /api/categories(/:id) | Admin |
+| GET | /api/sources | Public |
+| POST/PUT/DELETE | /api/sources(/:id) | Admin |
+| GET | /api/articles | Public |
+| GET | /api/articles/search | Public |
+| GET | /api/articles/:id | Public |
+| POST/PUT/DELETE | /api/articles(/:id) | Admin |
+| PATCH | /api/articles/:id/approve | Admin |
+| POST | /api/news/fetch | Admin |
+| GET | /api/dashboard/summary | Admin |
+| GET | /api/trending | Public |
+| GET | /api/visualization/pie/categories | Public |
+| GET | /api/visualization/bar/sources | Public |
+| GET | /api/visualization/line/articles-over-time | Public |
+| GET | /api/visualization/area/cumulative-growth | Public |
+| GET/POST/DELETE | /api/bookmarks(/:articleId) | Logged-in |
+| GET/POST/PATCH/DELETE | /api/reading-history | Logged-in |
+| GET | /api/comments/article/:articleId | Public |
+| POST | /api/comments/article/:articleId | Logged-in |
+| DELETE | /api/comments/:commentId | Owner/Admin |
+| PATCH | /api/comments/:commentId/like | Logged-in |
+
+**Known cleanup item:** `/api/auth/admin-only` (Step 5) was a temporary test route to prove RBAC worked and should be removed before this is considered production-clean.
+
+---
+
+## 16. Request Flow (General Pattern)
+
+```
+Client → Express middleware pipeline (helmet, cors, body parser, rate limit)
+       → Route match → [protect] → [authorize] → [Joi validator]
+       → Controller (thin) → Service (business logic) → Repository (DB)
+       → Response
+       Any throw at any stage → asyncHandler → errorHandler → consistent JSON error
+```
+
+---
+
+## 17. Response Format
+
+Success: `{ "success": true, "data": ..., ...paginationOrCountFields }`
+Error: `{ "success": false, "message": "...", "stack": "..." (dev only) }`
+
+---
+
+## 18. Error Handling
+
+Centralized in `middleware/errorHandler.js`. Maps: Mongoose `CastError` → 400, duplicate key (`code: 11000`) → 409, `ValidationError` → 400, `JsonWebTokenError`/`TokenExpiredError` → 401. Stack traces only included when `NODE_ENV === 'development'`.
+
+---
+
+## 19. Validation
+
+Joi schemas exist per-resource in `validators/`: auth, article, search, bookmark, reading history, comment. Pattern: validate → on failure return 400 immediately, before touching any service/DB logic.
+
+---
+
+## 20. Logging
+
+`morgan('dev')` request logging, development-mode only. Cron jobs and ingestion log their own summaries (created/updated/skipped/errors counts) to console. No structured/persistent logging (e.g. Winston, log files) implemented — console only.
+
+---
+
+## 21. Security Features
+
+Helmet (secure headers), CORS (origin-restricted), express-rate-limit (100 req/15min on `/api`), bcrypt password hashing, JWT auth, `mongoose.set('sanitizeFilter', true)` (NoSQL injection protection at the query level, replacing the Express-5-incompatible `express-mongo-sanitize`), Joi input validation on all write endpoints.
+
+---
+
+## 22. JWT Workflow
+
+Issued on register/login with `{ id, role }` payload, `JWT_EXPIRE`-day lifetime. Verified on every protected request in `protect`; user is re-fetched from DB (not just trusted from the token payload) specifically to catch accounts deactivated after the token was issued.
+
+---
+
+## 23. Search Implementation
+
+`GET /api/articles/search` — combines a MongoDB `$text` index search (title/description/content/author) with structured filters (category, country, language, date range, source — accepting either an ObjectId or a fuzzy name match). Known simplification: results sort by `publishedAt`/`views`, not MongoDB's text relevance score. Every keyword search is logged to `SearchHistory` (fire-and-forget, non-blocking).
+
+---
+
+## 24. Trending Implementation
+
+`GET /api/trending` returns: most-viewed articles (sorted by `views`), most-searched terms (aggregated from `SearchHistory`), latest articles (sorted by `publishedAt`), and popular categories (ranked by total views across their articles, not raw article count).
+
+---
+
+## 25. Visualization APIs
+
+Four endpoints reshape existing aggregation data into Chart.js-native `{ labels, datasets: [{ label, data }] }` format: Pie (articles per category), Bar (top 10 sources by article count), Line (daily article counts, zero-filled for gap days), Area (cumulative running total of the same daily series).
+
+---
+
+## 26. Bookmark System
+
+Per-user saved articles. Enforced uniqueness via a compound `{user, article}` unique index at the database level (not just an application check), specifically to close a race-condition window where rapid double-submission could otherwise create duplicates.
+
+---
+
+## 27. Reading History
+
+Per-(user, article) record, upserted (not rejected) on repeat views — `viewCount` increments, `lastViewedAt` refreshes. Reading time is logged via a separate endpoint (frontend reports elapsed seconds), capped at 3600 seconds per call as a defensive measure against bad/malicious client input.
+
+---
+
+## 28. Comment System
+
+Users can add comments (public read, logged-in write), delete their own (ownership verified by comparing `comment.user` to `req.user._id`, both converted to strings for a valid comparison), and toggle likes via `$addToSet`/`$pull` on a `likes` array of user references — which also allows checking whether the *current* user specifically has liked a comment, not just a raw count. Admins can delete any comment (a deliberate addition beyond the original spec, for moderation).
