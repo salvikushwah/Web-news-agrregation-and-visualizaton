@@ -17,6 +17,7 @@ const visualizationRoutes = require('./routes/visualizationRoutes');
 const bookmarkRoutes = require('./routes/bookmarkRoutes');
 const readingHistoryRoutes = require('./routes/readingHistoryRoutes');
 const commentRoutes = require('./routes/commentRoutes');
+const geoRoutes = require('./routes/geoRoutes');
 // ...
 
 
@@ -42,20 +43,26 @@ if (process.env.NODE_ENV === 'development') {
 }
 
 // Rate limiting — max 100 requests per 15 min per IP, applied to all /api routes
-const limiter = rateLimit({
+const apiLimiter = rateLimit({
   windowMs: 15 * 60 * 1000,
-  max: 100,
-  message: 'Too many requests from this IP, please try again later.',
+  max: 300,
+  standardHeaders: true,
+  legacyHeaders: false,
+  message: {
+    success: false,
+    message: 'Too many requests, please try again later.'
+  }
 });
-app.use('/api', limiter);
+
+app.use('/api', apiLimiter);
 
 // Simple health check — confirms the server is alive
 app.get('/api/health', (req, res) => {
   res.status(200).json({ success: true, message: 'Server is healthy' });
 });
 
-// Temporary 404 handler — we have no routes mounted yet
-// Routes
+
+// 404 handler for unknown API routes
 app.use('/api/categories', categoryRoutes);
 app.use('/api/sources', sourceRoutes);
 app.use('/api/auth', authRoutes);
@@ -67,7 +74,7 @@ app.use('/api/visualization', visualizationRoutes);
 app.use('/api/bookmarks', bookmarkRoutes);
 app.use('/api/reading-history', readingHistoryRoutes);
 app.use('/api/comments', commentRoutes);
-app.use('/api/geo', require('./routes/geoRoutes'));
+app.use('/api/geo', geoRoutes);
 // 404 handler — must come after all real routes
 app.use((req, res) => {
   res.status(404).json({ success: false, message: 'Route not found' });

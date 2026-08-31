@@ -1,6 +1,6 @@
 const articleRepository = require('../repositories/articleRepository');
-const categoryRepository = require('../repositories/categoryRepository');
-const sourceRepository = require('../repositories/sourceRepository');
+// const categoryRepository = require('../repositories/categoryRepository');
+// const sourceRepository = require('../repositories/sourceRepository');
 const AppError = require('../utils/AppError');
 
 const createArticle = async (data) => {
