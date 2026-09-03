@@ -2,38 +2,39 @@ const mongoose = require('mongoose');
 
 const sourceSchema = new mongoose.Schema(
   {
-    // name: {
-    //   type: String,
-    //   required: [true, 'Source name is required'],
-    //   trim: true,
-    //   unique: true,
-    // },
-    // The 'id' field NewsAPI/GNews uses internally (e.g. "bbc-news")
-    // This is how we'll detect duplicates when fetching from the API later
-    // apiSourceId: {
-    //   type: String,
-    //   trim: true,
-    //   unique: true,
-    //   sparse: true, // allows multiple docs with no apiSourceId without violating uniqueness
-    // },
+    name: {
+      type: String,
+      required: [true, 'Source name is required'],
+      trim: true,
+    },
+
+    apiSourceId: {
+      type: String,
+      trim: true,
+    },
+
     url: {
       type: String,
       trim: true,
     },
+
     country: {
       type: String,
       trim: true,
       lowercase: true,
     },
+
     language: {
       type: String,
       trim: true,
       lowercase: true,
     },
+
     logo: {
       type: String,
       trim: true,
     },
+
     isActive: {
       type: Boolean,
       default: true,
@@ -42,7 +43,7 @@ const sourceSchema = new mongoose.Schema(
   { timestamps: true }
 );
 
-sourceSchema.index({ name: 1 });
-sourceSchema.index({ apiSourceId: 1 });
+sourceSchema.index({ name: 1 }, { unique: true });
+sourceSchema.index({ apiSourceId: 1 }, { unique: true, sparse: true });
 
 module.exports = mongoose.model('Source', sourceSchema);

@@ -3,13 +3,13 @@ const mongoose = require('mongoose');
 const Category = require('../models/Category');
 
 const categories = [
-  { name: 'Technology', description: 'Tech news and innovations' },
-  { name: 'Sports', description: 'Sports news and updates' },
-  { name: 'Business', description: 'Business and finance news' },
-  { name: 'Politics', description: 'Political news and analysis' },
-  { name: 'Entertainment', description: 'Movies, music, celebrity news' },
-  { name: 'Science', description: 'Scientific discoveries and research' },
-  { name: 'Health', description: 'Health and wellness news' },
+  { name: 'Technology', slug: 'technology', description: 'Tech news and innovations' },
+  { name: 'Sports', slug: 'sports', description: 'Sports news and updates' },
+  { name: 'Business', slug: 'business', description: 'Business and finance news' },
+  { name: 'Politics', slug: 'politics', description: 'Political news and analysis' },
+  { name: 'Entertainment', slug: 'entertainment', description: 'Movies, music, celebrity news' },
+  { name: 'Science', slug: 'science', description: 'Scientific discoveries and research' },
+  { name: 'Health', slug: 'health', description: 'Health and wellness news' },
 ];
 
 const seed = async () => {
