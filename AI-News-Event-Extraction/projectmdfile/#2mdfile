@@ -1,0 +1,71 @@
+# AI News Event Extraction
+## Progress Checkpoint #2
+
+### Completed
+
+- Windows development environment configured.
+- Python virtual environment created.
+- FastAPI project initialized.
+- Health check endpoint created.
+- POST endpoint `/extract-event` implemented.
+- Temporary request schema created.
+
+Request Schema
+
+{
+    "title": "...",
+    "content": "..."
+}
+
+- Backend to AI communication verified using Swagger UI.
+- Environment variables configured.
+- Groq API key successfully loaded from `.env`.
+
+---
+
+## Current Architecture
+
+Backend (Mock)
+        ↓
+FastAPI
+        ↓
+Receive Article
+        ↓
+Return JSON
+
+(No LLM integration yet)
+
+---
+
+## Files
+
+app/
+    main.py
+
+.env
+
+requirements.txt
+
+.gitignore
+
+README.md
+
+run.py
+
+---
+
+## Next Goal
+
+Integrate Groq.
+
+Workflow:
+
+Receive Article
+        ↓
+Generate Prompt
+        ↓
+Call Groq
+        ↓
+Receive JSON
+        ↓
+Return JSON

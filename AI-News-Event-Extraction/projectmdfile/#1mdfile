@@ -1,0 +1,83 @@
+# AI News Event Extraction
+## Progress Checkpoint #1
+
+### Project Goal
+Develop an AI microservice that receives news articles from the backend, extracts structured events using an LLM, and returns JSON.
+
+---
+
+## Completed
+
+### Environment
+- Windows
+- VS Code
+- Python Virtual Environment
+- FastAPI
+- Uvicorn
+- Requests
+- OpenAI SDK
+- Python-dotenv
+- Pydantic
+
+---
+
+## Folder Structure
+
+AI-News-Event-Extraction/
+
+app/
+    main.py
+
+tests/
+
+.env
+.gitignore
+README.md
+requirements.txt
+run.py
+
+---
+
+## Current API
+
+GET /
+
+Response
+
+{
+    "status":"running",
+    "service":"AI News Event Extraction API"
+}
+
+---
+
+## Current Command
+
+uvicorn app.main:app --reload
+
+---
+
+## Current Status
+
+FastAPI server is running successfully.
+
+No backend integration yet.
+
+No LLM integration yet.
+
+---
+
+## Next Milestone
+
+Create the first POST endpoint.
+
+Backend will send
+
+{
+    "title":"...",
+    "content":"..."
+}
+
+FastAPI will receive it successfully.
+
+No LLM yet.
