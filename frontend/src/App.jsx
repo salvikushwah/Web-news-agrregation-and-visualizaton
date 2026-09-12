@@ -31,12 +31,12 @@ const newsData = [
 ];
 
 const categories = [
-  ["All", 248],
+  ["All", 124],
   ["Technology", 54],
   ["Politics", 43],
   ["Sports", 38],
   ["Health", 31],
-  ["Finance", 28],
+  ["Finance",10],
 ];
 
 function App() {
