@@ -1,5 +1,7 @@
 import React, { useState } from "react";
 
+const VisualizationPage = React.lazy(() => import("./visualization/VisualizationPage"));
+
 
 const newsData = [
   {
@@ -38,6 +40,7 @@ const categories = [
 ];
 
 function App() {
+  const [route, setRoute] = useState(() => window.location.pathname);
   const [search, setSearch] = useState("");
   const [category, setCategory] = useState("All");
 
@@ -52,6 +55,25 @@ function App() {
     return searchMatch && categoryMatch;
   });
 
+  const navigate = (path) => {
+    window.history.pushState({}, "", path);
+    setRoute(path);
+  };
+
+  React.useEffect(() => {
+    const handlePopState = () => setRoute(window.location.pathname);
+    window.addEventListener("popstate", handlePopState);
+    return () => window.removeEventListener("popstate", handlePopState);
+  }, []);
+
+  if (route === "/visualization") {
+    return (
+      <React.Suspense fallback={<div className="route-loading">Loading visualizations…</div>}>
+        <VisualizationPage onNavigateHome={() => navigate("/")} />
+      </React.Suspense>
+    );
+  }
+
   return (
     <div className="page">
 
@@ -63,6 +85,7 @@ function App() {
         </div>
 
         <div className="header-right">
+          <button className="visualization-btn" onClick={() => navigate("/visualization")}>Visualizations</button>
           <input
             type="text"
             placeholder="Search articles..."
