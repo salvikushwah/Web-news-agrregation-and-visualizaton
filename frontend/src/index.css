@@ -293,7 +293,6 @@ body {
 
   overflow: hidden;
 }
-
 .bar-fill {
   height: 100%;
 
@@ -315,7 +314,6 @@ body {
     flex-direction: column;
     gap: 10px;
   }
-
   .header-right {
     width: 100%;
   }
@@ -461,7 +459,6 @@ body {
     border-radius: 20px !important;
   }
 }
-
 @media (max-width: 560px) {
   .visualization-page { padding: 8px; gap: 8px; }
   .visualization-header { min-height: 0; padding: 12px !important; }
