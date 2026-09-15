@@ -26,8 +26,6 @@ body {
   font-size: 0.95rem;
 }
 
-/* ================= PAGE ================= */
-
 .page {
   width: 100%;
   max-width: 1400px;
@@ -35,7 +33,6 @@ body {
   padding: 18px 22px;
 }
 
-/* ================= HEADER ================= */
 
 .header {
   width: 100%;
@@ -116,8 +113,6 @@ body {
 
 .visualization-btn { background: #0f766e; }
 
-/* ================= STATS ================= */
-
 .stats {
   width: 100%;
 
@@ -157,8 +152,6 @@ body {
   font-weight: 700;
 }
 
-/* ================= CONTENT ================= */
-
 .content {
   display: grid;
 
@@ -169,7 +162,6 @@ body {
   align-items: start;
 }
 
-/* ================= COMMON ================= */
 
 .categories-box,
 .chart-box {
@@ -187,8 +179,6 @@ body {
 
   margin-bottom: 12px;
 }
-
-/* ================= CATEGORIES ================= */
 
 .category-row {
   display: flex;
@@ -214,8 +204,6 @@ body {
   font-weight: 700;
   background: #f1f5f9;
 }
-
-/* ================= LATEST NEWS ================= */
 
 .news-section {
   min-width: 0;
@@ -280,8 +268,6 @@ body {
   color: #777;
 }
 
-/* ================= CHART ================= */
-
 .chart-item {
   margin-bottom: 11px;
 }
@@ -315,8 +301,6 @@ body {
 
   border-radius: 10px;
 }
-
-/* ================= RESPONSIVE ================= */
 
 @media (max-width: 800px) {
 
@@ -384,8 +368,6 @@ body {
 .visualization-page .leaflet-popup-content-wrapper { background: rgba(255, 255, 255, 0.95) !important; backdrop-filter: blur(12px) !important; border-radius: 1rem !important; box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.15) !important; padding: 0.5rem !important; border: 1px solid rgba(226, 232, 240, 0.8) !important; }
 .visualization-page .leaflet-popup-tip { background: rgba(255, 255, 255, 0.95) !important; }
 .visualization-page .custom-map-marker { background: transparent !important; border: none !important; }
-
-/* ================= VISUALIZATION LAYOUT ================= */
 
 .visualization-page {
   min-height: 100dvh;

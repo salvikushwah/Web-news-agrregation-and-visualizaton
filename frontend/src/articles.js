@@ -34,7 +34,6 @@ const articles = [
     image: "https://images.unsplash.com/photo-1511707171634-5f897ff02aa9",
     url: "#"
   },
-
   {
     id: 4,
     title: "Global markets show positive growth",

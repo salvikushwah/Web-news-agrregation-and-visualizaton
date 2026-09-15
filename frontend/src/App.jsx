@@ -3,8 +3,6 @@ import React, { useState } from "react";
 const VisualizationPage = React.lazy(() =>
   import("./visualization/VisualizationPage")
 );
-
-// NEWS DATA
 const newsData = [
   {
     category: "Technology",
@@ -73,11 +71,10 @@ const newsData = [
     category: "Finance",
     title: "Global financial trends to watch",
     source: "BBC",
+
     time: "2 days ago",
     isToday: false,
   },
-
-  // EXTRA ARTICLES
   {
     category: "Technology",
     title: "New AI tools are changing the way people work",
@@ -101,7 +98,6 @@ const newsData = [
   },
 ];
 
-// UNIQUE CATEGORIES
 const allCategories = [
   "All",
   ...new Set(newsData.map((item) => item.category)),
@@ -112,7 +108,7 @@ function App() {
   const [search, setSearch] = useState("");
   const [category, setCategory] = useState("All");
 
-  // FILTER NEWS
+
   const filteredNews = newsData.filter((item) => {
     const searchMatch =
       item.title.toLowerCase().includes(search.toLowerCase()) ||
@@ -124,16 +120,12 @@ function App() {
 
     return searchMatch && categoryMatch;
   });
-
-  // TOTAL ARTICLES
   const totalArticles = filteredNews.length;
 
-  // TODAY'S ARTICLES
   const todaysArticles = filteredNews.filter(
     (item) => item.isToday
   ).length;
 
-  // CATEGORY COUNTS
   const categoryCounts = allCategories.map((name) => {
     if (name === "All") {
       return [name, filteredNews.length];
@@ -146,7 +138,6 @@ function App() {
     return [name, count];
   });
 
-  // TOP SOURCE
   const sourceCounts = {};
 
   filteredNews.forEach((item) => {
@@ -159,7 +150,6 @@ function App() {
       (a, b) => b[1] - a[1]
     )[0]?.[0] || "—";
 
-  // NAVIGATION
   const navigate = (path) => {
     window.history.pushState({}, "", path);
     setRoute(path);
@@ -176,7 +166,6 @@ function App() {
       window.removeEventListener("popstate", handlePopState);
   }, []);
 
-  // VISUALIZATION PAGE
   if (route === "/visualization") {
     return (
       <React.Suspense
@@ -231,8 +220,6 @@ function App() {
         </div>
 
       </header>
-
-
       {/* STAT CARDS */}
       <div className="stats">
 
@@ -287,7 +274,6 @@ function App() {
 
       </div>
 
-
       {/* THREE COLUMN AREA */}
       <div className="content">
 
@@ -316,7 +302,6 @@ function App() {
           ))}
 
         </aside>
-
 
         {/* CENTER - LATEST NEWS */}
         <section className="news-section">
